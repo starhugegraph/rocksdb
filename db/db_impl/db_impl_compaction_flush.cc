@@ -2230,7 +2230,7 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
     // DB is being deleted; no more background compactions
     return;
   }
-  auto bg_job_limits = GetBGJobLimits();
+  auto bg_job_limits = GetBGJobLimits(IsWriting());
   bool is_flush_pool_empty =
       env_->GetBackgroundThreads(Env::Priority::HIGH) == 0;
   while (!is_flush_pool_empty && unscheduled_flushes_ > 0 &&
@@ -2294,23 +2294,35 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   }
 }
 
-DBImpl::BGJobLimits DBImpl::GetBGJobLimits() const {
+bool DBImpl::IsWriting() 
+{ 
+  return unscheduled_flushes_ > 0 || bg_flush_scheduled_ > 0;
+}
+
+DBImpl::BGJobLimits DBImpl::GetBGJobLimits(bool is_writing) const {
   mutex_.AssertHeld();
+  BGJobLimitsType type = BGJobLimitsType::kSingle;
+  if(write_controller_.NeedSpeedupCompaction()) {
+    type = BGJobLimitsType::kHalf;
+  } else if(!is_writing) {
+    // 
+    type = BGJobLimitsType::kFull;
+  }
   return GetBGJobLimits(mutable_db_options_.max_background_flushes,
                         mutable_db_options_.max_background_compactions,
                         mutable_db_options_.max_background_jobs,
-                        write_controller_.NeedSpeedupCompaction());
+                        type);
 }
 
 DBImpl::BGJobLimits DBImpl::GetBGJobLimits(int max_background_flushes,
                                            int max_background_compactions,
                                            int max_background_jobs,
-                                           bool parallelize_compactions) {
+                                           BGJobLimitsType type) {
   BGJobLimits res;
   if (max_background_flushes == -1 && max_background_compactions == -1) {
     // for our first stab implementing max_background_jobs, simply allocate a
     // quarter of the threads to flushes.
-    res.max_flushes = std::max(1, max_background_jobs / 4);
+    res.max_flushes = std::max(1, max_background_jobs / 2);
     res.max_compactions = std::max(1, max_background_jobs - res.max_flushes);
   } else {
     // compatibility code in case users haven't migrated to max_background_jobs,
@@ -2318,9 +2330,12 @@ DBImpl::BGJobLimits DBImpl::GetBGJobLimits(int max_background_flushes,
     res.max_flushes = std::max(1, max_background_flushes);
     res.max_compactions = std::max(1, max_background_compactions);
   }
-  if (!parallelize_compactions) {
+  if (type == BGJobLimitsType::kSingle) {
     // throttle background compactions until we deem necessary
     res.max_compactions = 1;
+  } else if (type == BGJobLimitsType::kHalf ) {
+    // for speed up para
+    res.max_compactions = std::max(1, res.max_compactions/2);
   }
   return res;
 }
@@ -2554,7 +2569,7 @@ Status DBImpl::BackgroundFlush(bool* made_progress, JobContext* job_context,
   }
 
   if (!bg_flush_args.empty()) {
-    auto bg_job_limits = GetBGJobLimits();
+    auto bg_job_limits = GetBGJobLimits(IsWriting());
     for (const auto& arg : bg_flush_args) {
       ColumnFamilyData* cfd = arg.cfd_;
       ROCKS_LOG_BUFFER(

@@ -644,13 +644,23 @@ class DBImpl : public DB {
     int max_flushes;
     int max_compactions;
   };
+
+  enum BGJobLimitsType {
+    kSingle, // single thread
+    kHalf,  // half parallelize_compactions
+    kFull,  // full parallelize_compactions
+  };
+
+  // detect if current writing
+  bool IsWriting();
+  
   // Returns maximum background flushes and compactions allowed to be scheduled
-  BGJobLimits GetBGJobLimits() const;
+  BGJobLimits GetBGJobLimits(bool is_writing=true) const;
   // Need a static version that can be called during SanitizeOptions().
   static BGJobLimits GetBGJobLimits(int max_background_flushes,
                                     int max_background_compactions,
                                     int max_background_jobs,
-                                    bool parallelize_compactions);
+                                    BGJobLimitsType type);
 
   // move logs pending closing from job_context to the DB queue and
   // schedule a purge

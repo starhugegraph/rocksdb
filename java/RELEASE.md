@@ -11,6 +11,8 @@ Building a cross-platform JAR requires:
 Once you have these items, run this make command from RocksDB's root source directory:
 
     make jclean clean rocksdbjavastaticreleasedocker
+or 
+    make jclean clean-not-downloaded rocksdbjavastaticreleasedocker
 
 This command will build RocksDB natively on OSX, and will then spin up docker containers to build RocksDB for 32-bit and 64-bit Linux with glibc, and 32-bit and 64-bit Linux with musl libc.
 

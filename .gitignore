@@ -95,3 +95,9 @@ fuzz/proto/gen/
 fuzz/crash-*
 
 cmake-build-*
+
+/bzip2-*
+/zlib-*
+/lz4-*
+/snappy-*
+/zstd-*

@@ -1,4 +1,17 @@
-# Rocksdb Change Log
+# Rocksdb Change Log. 
+
+(branch for 6.22.fb) fork by starhugegraph
+
+## 6.22.300 (2021-08-21)
+### Behavior Changes
+* max_background_flushes is 1/4 of max_background_jobs by default, now changed to 1/2.
+* In prevoius, JobLimit for background compactions is max_background_compactions when 
+in parallel-status, otherwise this value is 1.  Now this value is max_background_compactions/2 
+when in parallel-status, and is max_background_compactions when in writing-finish status, otherwise, 
+this value is 1. Thus, compaction will run quickly after batch writing finished.
+* 
+
+
 ## 6.22.3 (2021-07-19)
 ### Bug Fixes
 * Fixed block cache entry stat scans not to hold the DB mutex, which was a serious performance bug for tail latencies in TransactionDB and likely elsewhere.

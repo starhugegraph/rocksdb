@@ -66,7 +66,7 @@ DBOptions SanitizeOptions(const std::string& dbname, const DBOptions& src,
   }
   auto bg_job_limits = DBImpl::GetBGJobLimits(
       result.max_background_flushes, result.max_background_compactions,
-      result.max_background_jobs, true /* parallelize_compactions */);
+      result.max_background_jobs, DBImpl::BGJobLimitsType::kFull);
   result.env->IncBackgroundThreadsIfNeeded(bg_job_limits.max_compactions,
                                            Env::Priority::LOW);
   result.env->IncBackgroundThreadsIfNeeded(bg_job_limits.max_flushes,
