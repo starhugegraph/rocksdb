@@ -212,6 +212,7 @@ class MemTableList {
                         int64_t max_write_buffer_size_to_maintain)
       : imm_flush_needed(false),
         imm_trim_needed(false),
+        imm_last_update_time_(0),
         min_write_buffer_number_to_merge_(min_write_buffer_number_to_merge),
         current_(new MemTableListVersion(&current_memory_usage_,
                                          max_write_buffer_number_to_maintain,
@@ -236,6 +237,9 @@ class MemTableList {
   std::atomic<bool> imm_flush_needed;
 
   std::atomic<bool> imm_trim_needed;
+
+  // last add/flush time
+  std::atomic<long> imm_last_update_time_;
 
   // Returns the total number of memtables in the list that haven't yet
   // been flushed and logged.

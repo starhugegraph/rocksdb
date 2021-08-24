@@ -565,7 +565,7 @@ Compaction* CompactionPicker::CompactRange(
     int input_level, int output_level,
     const CompactRangeOptions& compact_range_options, const InternalKey* begin,
     const InternalKey* end, InternalKey** compaction_end, bool* manual_conflict,
-    uint64_t max_file_num_to_ignore) {
+    uint64_t max_file_num_to_ignore, bool compact_all_level0) {
   // CompactionPickerFIFO has its own implementation of compact range
   assert(ioptions_.compaction_style != kCompactionStyleFIFO);
 
@@ -637,7 +637,7 @@ Compaction* CompactionPicker::CompactRange(
         compact_range_options.max_subcompactions, /* grandparents */ {},
         /* is manual */ true);
     RegisterCompaction(c);
-    vstorage->ComputeCompactionScore(ioptions_, mutable_cf_options);
+    vstorage->ComputeCompactionScore(ioptions_, mutable_cf_options, compact_all_level0);
     return c;
   }
 
@@ -822,7 +822,7 @@ Compaction* CompactionPicker::CompactRange(
   // takes running compactions into account (by skipping files that are already
   // being compacted). Since we just changed compaction score, we recalculate it
   // here
-  vstorage->ComputeCompactionScore(ioptions_, mutable_cf_options);
+  vstorage->ComputeCompactionScore(ioptions_, mutable_cf_options, compact_all_level0);
 
   return compaction;
 }

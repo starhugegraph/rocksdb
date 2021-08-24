@@ -1,16 +1,15 @@
 # Rocksdb Change Log. 
 
-(branch for 6.22.fb) fork by starhugegraph
+(branch from 6.22.fb/6.22.3 for gh2021) forked by starhugegraph
 
-## 6.22.300 (2021-08-21)
+## 6.22.300 (2021-08-23)
 ### Behavior Changes
 * max_background_flushes is 1/4 of max_background_jobs by default, now changed to 1/2.
-* In prevoius, JobLimit for background compactions is max_background_compactions when 
+* Prevoiusly JobLimit for background compactions is max_background_compactions when 
 in parallel-status, otherwise this value is 1.  Now this value is max_background_compactions/2 
 when in parallel-status, and is max_background_compactions when in writing-finish status, otherwise, 
 this value is 1. Thus, compaction will run quickly after batch writing finished.
-* 
-
+* Ensure level0_file to be compacted before all compactions is finished (by cfd.IsEmpty() lasted for 60 sec)
 
 ## 6.22.3 (2021-07-19)
 ### Bug Fixes

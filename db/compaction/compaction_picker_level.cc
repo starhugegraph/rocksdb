@@ -50,7 +50,8 @@ class LevelCompactionBuilder {
                          LogBuffer* log_buffer,
                          const MutableCFOptions& mutable_cf_options,
                          const ImmutableOptions& ioptions,
-                         const MutableDBOptions& mutable_db_options)
+                         const MutableDBOptions& mutable_db_options,
+                         bool compaction_all_level0)
       : cf_name_(cf_name),
         vstorage_(vstorage),
         earliest_mem_seqno_(earliest_mem_seqno),
@@ -58,7 +59,8 @@ class LevelCompactionBuilder {
         log_buffer_(log_buffer),
         mutable_cf_options_(mutable_cf_options),
         ioptions_(ioptions),
-        mutable_db_options_(mutable_db_options) {}
+        mutable_db_options_(mutable_db_options),
+        compaction_all_level0_(compaction_all_level0) {}
 
   // Pick and return a compaction.
   Compaction* PickCompaction();
@@ -123,6 +125,7 @@ class LevelCompactionBuilder {
   const MutableCFOptions& mutable_cf_options_;
   const ImmutableOptions& ioptions_;
   const MutableDBOptions& mutable_db_options_;
+  bool compaction_all_level0_ = false;
   // Pick a path ID to place a newly generated file, with its level
   static uint32_t GetPathId(const ImmutableCFOptions& ioptions,
                             const MutableCFOptions& mutable_cf_options,
@@ -347,7 +350,7 @@ Compaction* LevelCompactionBuilder::GetCompaction() {
   // takes running compactions into account (by skipping files that are already
   // being compacted). Since we just changed compaction score, we recalculate it
   // here
-  vstorage_->ComputeCompactionScore(ioptions_, mutable_cf_options_);
+  vstorage_->ComputeCompactionScore(ioptions_, mutable_cf_options_, compaction_all_level0_);
   return c;
 }
 
@@ -501,10 +504,10 @@ bool LevelCompactionBuilder::PickIntraL0Compaction() {
 Compaction* LevelCompactionPicker::PickCompaction(
     const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
     const MutableDBOptions& mutable_db_options, VersionStorageInfo* vstorage,
-    LogBuffer* log_buffer, SequenceNumber earliest_mem_seqno) {
+    LogBuffer* log_buffer, SequenceNumber earliest_mem_seqno, bool compact_all_level0) {
   LevelCompactionBuilder builder(cf_name, vstorage, earliest_mem_seqno, this,
                                  log_buffer, mutable_cf_options, ioptions_,
-                                 mutable_db_options);
+                                 mutable_db_options, compact_all_level0);
   return builder.PickCompaction();
 }
 }  // namespace ROCKSDB_NAMESPACE

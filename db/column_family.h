@@ -354,6 +354,11 @@ class ColumnFamilyData {
     return mem()->GetFirstSequenceNumber() == 0 && imm()->NumNotFlushed() == 0;
   }
 
+  // compact all_level0 while IsEmtpy() stat lasted for 60 sec
+  bool NeedCompactAllLevel0() {
+    return IsEmpty() && imm()->imm_last_update_time_ + 60*1000 > time(nullptr);
+  }
+
   Version* current() { return current_; }
   Version* dummy_versions() { return dummy_versions_; }
   void SetCurrent(Version* _current);

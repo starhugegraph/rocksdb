@@ -356,6 +356,8 @@ void MemTableList::PickMemtablesToFlush(uint64_t max_memtable_id,
       }
       m->flush_in_progress_ = true;  // flushing will start very soon
       ret->push_back(m);
+      // touch
+      imm_last_update_time_ = time(nullptr);
     }
   }
   if (!atomic_flush || num_flush_not_started_ == 0) {
@@ -417,6 +419,7 @@ Status MemTableList::TryInstallMemtableFlushResults(
 
   // Only a single thread can be executing this piece of code
   commit_in_progress_ = true;
+  imm_last_update_time_ = time(nullptr);
 
   // Retry until all completed flushes are committed. New flushes can finish
   // while the current thread is writing manifest where mutex is released.
@@ -532,6 +535,9 @@ void MemTableList::Add(MemTable* m, autovector<MemTable*>* to_delete) {
   }
   UpdateCachedValuesFromMemTableListVersion();
   ResetTrimHistoryNeeded();
+
+  // remmember add time
+  imm_last_update_time_ = time(nullptr);
 }
 
 bool MemTableList::TrimHistory(autovector<MemTable*>* to_delete, size_t usage) {

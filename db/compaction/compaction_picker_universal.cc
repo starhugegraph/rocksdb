@@ -35,7 +35,7 @@ class UniversalCompactionBuilder {
       const ImmutableOptions& ioptions, const InternalKeyComparator* icmp,
       const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
       const MutableDBOptions& mutable_db_options, VersionStorageInfo* vstorage,
-      UniversalCompactionPicker* picker, LogBuffer* log_buffer)
+      UniversalCompactionPicker* picker, LogBuffer* log_buffer, bool /*compact_all_level0*/)
       : ioptions_(ioptions),
         icmp_(icmp),
         cf_name_(cf_name),
@@ -118,6 +118,7 @@ class UniversalCompactionBuilder {
   VersionStorageInfo* vstorage_;
   UniversalCompactionPicker* picker_;
   LogBuffer* log_buffer_;
+  bool compact_all_level0_;
 
   static std::vector<SortedRun> CalculateSortedRuns(
       const VersionStorageInfo& vstorage);
@@ -278,10 +279,10 @@ bool UniversalCompactionPicker::NeedsCompaction(
 Compaction* UniversalCompactionPicker::PickCompaction(
     const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
     const MutableDBOptions& mutable_db_options, VersionStorageInfo* vstorage,
-    LogBuffer* log_buffer, SequenceNumber /* earliest_memtable_seqno */) {
+    LogBuffer* log_buffer, SequenceNumber /* earliest_memtable_seqno */, bool compact_all_level0) {
   UniversalCompactionBuilder builder(ioptions_, icmp_, cf_name,
                                      mutable_cf_options, mutable_db_options,
-                                     vstorage, this, log_buffer);
+                                     vstorage, this, log_buffer, compact_all_level0);
   return builder.PickCompaction();
 }
 
@@ -490,7 +491,7 @@ Compaction* UniversalCompactionBuilder::PickCompaction() {
                     c->inputs(0)->size());
 
   picker_->RegisterCompaction(c);
-  vstorage_->ComputeCompactionScore(ioptions_, mutable_cf_options_);
+  vstorage_->ComputeCompactionScore(ioptions_, mutable_cf_options_, compact_all_level0_);
 
   TEST_SYNC_POINT_CALLBACK("UniversalCompactionBuilder::PickCompaction:Return",
                            c);

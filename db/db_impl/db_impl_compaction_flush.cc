@@ -1265,7 +1265,8 @@ Status DBImpl::CompactFilesImpl(
   // being compacted). Since we just changed compaction score, we recalculate it
   // here.
   version->storage_info()->ComputeCompactionScore(*cfd->ioptions(),
-                                                  *c->mutable_cf_options());
+                                                  *c->mutable_cf_options(),
+                                                  cfd->NeedCompactAllLevel0());
 
   compaction_job.Prepare();
 
@@ -2296,6 +2297,7 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
 
 bool DBImpl::IsWriting() 
 { 
+  // need check memtable and flushing ...
   return unscheduled_flushes_ > 0 || bg_flush_scheduled_ > 0;
 }
 
@@ -2973,7 +2975,8 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
               ->current()
               ->storage_info()
               ->ComputeCompactionScore(*(c->immutable_options()),
-                                       *(c->mutable_cf_options()));
+                                       *(c->mutable_cf_options()),
+                                       cfd->NeedCompactAllLevel0());
           AddToCompactionQueue(cfd);
           ++unscheduled_compactions_;
 
@@ -3248,7 +3251,8 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
           ->current()
           ->storage_info()
           ->ComputeCompactionScore(*(c->immutable_options()),
-                                   *(c->mutable_cf_options()));
+                                   *(c->mutable_cf_options()),
+                                   cfd->NeedCompactAllLevel0());
       if (!cfd->queued_for_compaction()) {
         AddToCompactionQueue(cfd);
         ++unscheduled_compactions_;

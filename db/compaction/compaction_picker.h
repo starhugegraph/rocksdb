@@ -58,7 +58,8 @@ class CompactionPicker {
       const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
       const MutableDBOptions& mutable_db_options, VersionStorageInfo* vstorage,
       LogBuffer* log_buffer,
-      SequenceNumber earliest_memtable_seqno = kMaxSequenceNumber) = 0;
+      SequenceNumber earliest_memtable_seqno = kMaxSequenceNumber,
+      bool compact_all_level0 = false) = 0;
 
   // Return a compaction object for compacting the range [begin,end] in
   // the specified level.  Returns nullptr if there is nothing in that
@@ -78,7 +79,8 @@ class CompactionPicker {
       const CompactRangeOptions& compact_range_options,
       const InternalKey* begin, const InternalKey* end,
       InternalKey** compaction_end, bool* manual_conflict,
-      uint64_t max_file_num_to_ignore);
+      uint64_t max_file_num_to_ignore,
+      bool compact_all_level0 = false);
 
   // The maximum allowed output level.  Default value is NumberLevels() - 1.
   virtual int MaxOutputLevel() const { return NumberLevels() - 1; }
@@ -255,7 +257,8 @@ class NullCompactionPicker : public CompactionPicker {
       const MutableCFOptions& /*mutable_cf_options*/,
       const MutableDBOptions& /*mutable_db_options*/,
       VersionStorageInfo* /*vstorage*/, LogBuffer* /* log_buffer */,
-      SequenceNumber /* earliest_memtable_seqno */) override {
+      SequenceNumber /* earliest_memtable_seqno */,
+      bool /*compact_all_level0*/) override {
     return nullptr;
   }
 
@@ -270,7 +273,8 @@ class NullCompactionPicker : public CompactionPicker {
                            const InternalKey* /*end*/,
                            InternalKey** /*compaction_end*/,
                            bool* /*manual_conflict*/,
-                           uint64_t /*max_file_num_to_ignore*/) override {
+                           uint64_t /*max_file_num_to_ignore*/,
+                           bool /*compact_all_level0*/) override {
     return nullptr;
   }
 

@@ -2555,7 +2555,8 @@ uint32_t GetExpiredTtlFilesCount(const ImmutableOptions& ioptions,
 
 void VersionStorageInfo::ComputeCompactionScore(
     const ImmutableOptions& immutable_options,
-    const MutableCFOptions& mutable_cf_options) {
+    const MutableCFOptions& mutable_cf_options,
+    bool compact_all_level0) {
   for (int level = 0; level <= MaxInputLevel(); level++) {
     double score;
     if (level == 0) {
@@ -2611,8 +2612,19 @@ void VersionStorageInfo::ComputeCompactionScore(
         }
 
       } else {
-        score = static_cast<double>(num_sorted_runs) /
-                mutable_cf_options.level0_file_num_compaction_trigger;
+        if(compact_all_level0) {
+          // force all level0 to be merged to l1
+          if (num_sorted_runs > 0 ) {
+            ROCKS_LOG_INFO(immutable_options.logger,
+              "score: force all level0 merged: %d", num_sorted_runs);
+            score = 2.0;
+          } else {
+            score = 0.0;
+          }
+        } else {
+          score = static_cast<double>(num_sorted_runs) 
+            / mutable_cf_options.level0_file_num_compaction_trigger;
+        }
         if (compaction_style_ == kCompactionStyleLevel && num_levels() > 1) {
           // Level-based involves L0->L0 compactions that can lead to oversized
           // L0 files. Take into account size as well to avoid later giant
@@ -3857,7 +3869,8 @@ void VersionSet::AppendVersion(ColumnFamilyData* column_family_data,
   // compute new compaction score
   v->storage_info()->ComputeCompactionScore(
       *column_family_data->ioptions(),
-      *column_family_data->GetLatestMutableCFOptions());
+      *column_family_data->GetLatestMutableCFOptions(), 
+      true);
 
   // Mark v finalized
   v->storage_info_.SetFinalized();

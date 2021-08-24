@@ -213,7 +213,8 @@ Compaction* FIFOCompactionPicker::PickSizeCompaction(
 Compaction* FIFOCompactionPicker::PickCompaction(
     const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
     const MutableDBOptions& mutable_db_options, VersionStorageInfo* vstorage,
-    LogBuffer* log_buffer, SequenceNumber /*earliest_memtable_seqno*/) {
+    LogBuffer* log_buffer, SequenceNumber /*earliest_memtable_seqno*/,
+    bool /*compact_all_level0*/) {
   assert(vstorage->num_levels() == 1);
 
   Compaction* c = nullptr;
@@ -236,7 +237,8 @@ Compaction* FIFOCompactionPicker::CompactRange(
     const CompactRangeOptions& /*compact_range_options*/,
     const InternalKey* /*begin*/, const InternalKey* /*end*/,
     InternalKey** compaction_end, bool* /*manual_conflict*/,
-    uint64_t /*max_file_num_to_ignore*/) {
+    uint64_t /*max_file_num_to_ignore*/,
+    bool compact_all_level0) {
 #ifdef NDEBUG
   (void)input_level;
   (void)output_level;
@@ -246,7 +248,7 @@ Compaction* FIFOCompactionPicker::CompactRange(
   *compaction_end = nullptr;
   LogBuffer log_buffer(InfoLogLevel::INFO_LEVEL, ioptions_.logger);
   Compaction* c = PickCompaction(cf_name, mutable_cf_options,
-                                 mutable_db_options, vstorage, &log_buffer);
+                                 mutable_db_options, vstorage, &log_buffer, compact_all_level0);
   log_buffer.FlushBufferToLog();
   return c;
 }
